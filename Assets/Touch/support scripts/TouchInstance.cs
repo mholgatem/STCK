@@ -109,8 +109,10 @@ public class TouchInstance {
 		startPos = _touch.position;
 		swipeStartPos = _touch.position;
 		overrideAction = TouchHandler.actions.None;
+		hasMoved = false;
 
 	}
+
 
 	//RETURN CORRECT TOUCH
 	public Touch getTouchById(int fingerId){

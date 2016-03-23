@@ -20,13 +20,15 @@ returns TouchInstance or TouchInstance[]
 
 
 
-
-
 [DisallowMultipleComponent]
 [ScriptOrder(-1000)]
 [RequireComponent (typeof(UnityEngine.EventSystems.StandaloneInputModule))]
 public class TouchHandler : MonoBehaviour{
 
+	[Header("Options")]
+	[Space(10,order=2)]
+
+	public bool dontDestroyOnLoad = false;
 	public bool displayStats = false;
 
 	[Tooltip("Time allowed between taps before reset")]
@@ -37,15 +39,15 @@ public class TouchHandler : MonoBehaviour{
 	public float longPressTime = 0.5f;
 	public static float _longPressTime;
 
-	public UnitTypes measureUnits;
+	public UnitTypes measureUnits = UnitTypes.Centimeter;
 	public static UnitTypes _measureUnits;
 
 	[Tooltip("Speed (measureUnits/Second) a touch can travel before swipe action")]
-	public float swipeThreshold;
+	public float swipeThreshold = 50f;
 	public static float _swipeThreshold;
 
 	[Tooltip("Distance a touch can move before drag action")]
-	public float dragThreshold;
+	public float dragThreshold = 0.5f;
 	public static float _dragThreshold;
 
 	public static float _pinchDistance;
@@ -58,12 +60,16 @@ public class TouchHandler : MonoBehaviour{
 	public static Touch[] touches = new Touch[0];
 	public static List<TouchInstance> _touchCache = new List<TouchInstance>();
 
-
 	// Use mouse to simulate touches
 	public bool simulateTouchWithMouse = false;
 	public TouchCreator tc = new TouchCreator();
 	private Touch fakeTouch;
 
+	void Awake () {
+		if (dontDestroyOnLoad){
+			DontDestroyOnLoad(this);
+		}
+	}
 
 	void Start () {
 		screenPixelsPerCm = Screen.dpi; //initialize
@@ -76,7 +82,7 @@ public class TouchHandler : MonoBehaviour{
 
 	}
 
-	public void assignTouches(){
+	public void AssignTouches(){
 
 		if (!simulateTouchWithMouse){
 			touches = (Touch[])Input.touches.Clone ();
@@ -100,7 +106,7 @@ public class TouchHandler : MonoBehaviour{
 
 	void Update () {
 
-		assignTouches();
+		AssignTouches();
 
 		//compare _touchCache to latest touches
 		foreach(Touch t in touches){
@@ -119,10 +125,11 @@ public class TouchHandler : MonoBehaviour{
 		}
 
 	}
-	
+
+	#if UNITY_EDITOR
 	void OnGUI()
 	{
-#if UNITY_EDITOR
+
 		if (displayStats){
 			Color fontColor = Color.white;
 			int w = Screen.width, h = Screen.height;
@@ -157,8 +164,8 @@ public class TouchHandler : MonoBehaviour{
 				GUI.Label(rect, text, style);
 			}
 		}
-#endif
 	}
+	#endif
 
 	//HELPERS
 	private const float inchesToCentimeters = 2.54f;
