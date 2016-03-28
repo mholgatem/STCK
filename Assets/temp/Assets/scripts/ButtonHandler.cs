@@ -7,7 +7,7 @@ namespace UnityStandardAssets.CrossPlatformInput
     {
 
 		public string command = "KEY_A";
-		public clientControl client;
+		public Client client;
 
         private string Name;
 		private bool isPressed = false;
@@ -25,7 +25,7 @@ namespace UnityStandardAssets.CrossPlatformInput
 			buttonMesh = transform.parent.transform;
 			canvas = GetComponent<CanvasRenderer>();
 			originalColor = canvas.GetColor ();
-			client = GameObject.FindWithTag("Client").GetComponent<clientControl>();
+			client = GameObject.FindWithTag("Client").GetComponent<Client>();
 			if (!command.StartsWith("KEY_") && !command.StartsWith("BTN_"))
 				commandType = "runCommand";
         }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 public class KeyboardHandler : MonoBehaviour {
 
-	public clientControl client;
+	public Client client;
 	public InputField inputField;
 	public Text textField;
 	public bool capsLock = false;
@@ -19,7 +19,7 @@ public class KeyboardHandler : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		client = GameObject.FindWithTag("Client").GetComponent<clientControl>();
+		client = GameObject.FindWithTag("Client").GetComponent<Client>();
 		inputField = GetComponent<InputField>();
 		TouchScreenKeyboard.Open("", TouchScreenKeyboardType.Default, false, true);
 	}

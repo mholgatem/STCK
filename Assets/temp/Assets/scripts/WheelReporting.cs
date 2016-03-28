@@ -6,7 +6,7 @@ using UnityStandardAssets.CrossPlatformInput;
 public class WheelReporting : MonoBehaviour {
 
 
-	public clientControl client;
+	public Client client;
 	public Toggle freezeTiltInput;
 	public GameObject controlRig;
 
@@ -15,7 +15,7 @@ public class WheelReporting : MonoBehaviour {
 	private float rate;
 	
 	void Start () {
-		client = GameObject.FindWithTag("Client").GetComponent<clientControl>();
+		client = GameObject.FindWithTag("Client").GetComponent<Client>();
 		rate = client.rate;
 	}
 

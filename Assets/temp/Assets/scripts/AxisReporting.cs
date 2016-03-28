@@ -6,7 +6,7 @@ using UnityStandardAssets.CrossPlatformInput;
 public class AxisReporting : MonoBehaviour {
 
 
-	public clientControl client;
+	public Client client;
 
 	private string axisH, axisV;
 	private Vector2 lastInput = Vector2.zero;
@@ -15,7 +15,7 @@ public class AxisReporting : MonoBehaviour {
 
 
 	void Start () {
-		client = GameObject.FindWithTag("Client").GetComponent<clientControl>();
+		client = GameObject.FindWithTag("Client").GetComponent<Client>();
 		rate = client.rate;
 		axisH = transform.parent.name + "-H";
 		axisV = transform.parent.name + "-V";
