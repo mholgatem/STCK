@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 public class ScriptOrder:Attribute {
 	public int order;
@@ -11,6 +13,7 @@ public class ScriptOrder:Attribute {
 	}
 }
 
+#if UNITY_EDITOR
 [InitializeOnLoad]
 public class ScriptOrderManager {
 	
@@ -27,3 +30,4 @@ public class ScriptOrderManager {
 		}
 	}
 }
+#endif

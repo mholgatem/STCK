@@ -2,7 +2,6 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using ClientSockets;
 using System.Security.Permissions;
 using JsonFx.Json;
  
@@ -12,7 +11,7 @@ public class LedsControl : MonoBehaviour {
 	public int portNumber = 30000;
 	
 	public static LedsControl use = null;
-	public SimpleClient ledsClient = new SimpleClient();
+	public SocksClient ledsClient = new SocksClient();
 	
 	private string serverMsg = "Not connected";
 	

@@ -4,22 +4,22 @@ using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using ClientSockets;
 using System.Security.Permissions;
 using JsonFx.Json;
  
 public class Client : MonoBehaviour {
 
 	public static Client currentInstance;
-	public SimpleClient socksClient = new SimpleClient();
+	public SocksClient socksClient = new SocksClient();
 	public float rate = .05f;
 	public ImageRenderer IR;
 	public byte[] image;
 	private bool newScreenshot = false;
 
-	private string ipAddress = PersistentVar.ip;
-	private string hostName = PersistentVar.hostName;
-	private int portNumber = PersistentVar.port;
+	public static string serverIP = "";
+	public static string serverHostName = "";
+	public static int serverPort = -1;
+	public static List<string> failedHost = new List<string>();
 
 	private string serverMsg = "Not connected";
 	private string commandQueue = "";
@@ -30,6 +30,7 @@ public class Client : MonoBehaviour {
 
 	
 	void Awake () {
+		// SINGLETON
 		if( currentInstance == null ) {
 			currentInstance = this;
 			DontDestroyOnLoad(this.gameObject);
@@ -38,12 +39,10 @@ public class Client : MonoBehaviour {
 		}
 	}
 	
-	public void Start ()  {
-		//needToRefreshUsers = false;
+	public void OnEnable ()  {
 		serverMsg = "Connecting...";
 		socksClient.ServerMessage += MessageDecoder;
 		Connect();
-
 
 	}
 	
@@ -57,7 +56,6 @@ public class Client : MonoBehaviour {
 
 		if (Application.loadedLevel == 0)
 			this.gameObject.SetActive (false);
-			//Destroy(this.gameObject);
 
 		if (commandQueue.Length > 0 && rateTimer > rate) {
 			qPlaceholder++;
@@ -82,18 +80,17 @@ public class Client : MonoBehaviour {
 	}
 	
 	public void Connect() {
-		
-		bool isConnected = socksClient.ConnectResult( ipAddress, portNumber );
+
+		bool isConnected = socksClient.ConnectResult( serverIP, serverPort );
 		if(isConnected) {
 			serverMsg = "Connected.";
-			if (Application.loadedLevel < 2) 
-				Application.LoadLevel (2);
+			if (Application.loadedLevel == 0) 
+				Application.LoadLevel (1);
 		}
 		else {
-			serverMsg = "";
-			Destroy ( this.gameObject );
-			PersistentVar.failedHost.Add (PersistentVar.hostName);
-			Application.LoadLevel ("Lobby");
+			serverMsg = "Connection Failed.";
+			failedHost.Add(serverHostName);
+			this.gameObject.SetActive(false);
 		}
 		
 	}

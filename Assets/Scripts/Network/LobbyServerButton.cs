@@ -9,6 +9,8 @@ public class LobbyServerButton : MonoBehaviour {
 	public string hostName;
 	public int port;
 	public bool isManualServer = false;
+
+	private GameObject gameClient;
 	
 	public void setProperties(string[] server){
 		hostName = server[0]; 
@@ -28,10 +30,10 @@ public class LobbyServerButton : MonoBehaviour {
 	}
 
 	public void MakeConnection(){
-		PersistentVar.hostName = hostName; 
-		PersistentVar.port = port;
-		PersistentVar.ip = ip; 
-		Application.LoadLevelAsync("Client");
+		Client.serverHostName = hostName;
+		Client.serverIP = ip;
+		Client.serverPort = port;
+		Client.currentInstance.gameObject.SetActive(true);
 	}
 	
 }

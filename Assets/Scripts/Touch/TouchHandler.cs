@@ -28,6 +28,7 @@ public class TouchHandler : MonoBehaviour{
 	[Header("Options")]
 	[Space(10,order=2)]
 
+	public static TouchHandler currentInstance;
 	public bool dontDestroyOnLoad = false;
 	public bool displayStats = false;
 
@@ -67,7 +68,13 @@ public class TouchHandler : MonoBehaviour{
 
 	void Awake () {
 		if (dontDestroyOnLoad){
-			DontDestroyOnLoad(this);
+			// SINGLETON
+			if( currentInstance == null ) {
+				currentInstance = this;
+				DontDestroyOnLoad(this.gameObject);
+			}else{
+				Destroy( this.gameObject );
+			}
 		}
 	}
 

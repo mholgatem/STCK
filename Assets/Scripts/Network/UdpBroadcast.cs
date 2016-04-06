@@ -251,7 +251,7 @@ public class UdpBroadcast : MonoBehaviour {
 		
 		IPEndPoint ep = new IPEndPoint(broadcast, broadcastPort);
 		
-		
+		Debug.Log ("invite " + message);
 		s.SendTo(sendbuf, ep);
 	}
 
@@ -274,7 +274,7 @@ public class UdpBroadcast : MonoBehaviour {
 				//make sure server sends secret key
 				string decrypted = CipherUtility.Decrypt<AesManaged>(text, secretKey, salt);
 				decrypted += anyIP.ToString();
-
+				Debug.Log ("receive " + decrypted);
 				if (decrypted.Contains(secretKey)){
 					decrypted = decrypted.Replace(secretKey, "");
 					addresses.Add (decrypted.Split(delimiterChars));
