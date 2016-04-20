@@ -8,7 +8,7 @@ public class TouchCreator
 	static BindingFlags flag = BindingFlags.Instance | BindingFlags.NonPublic;
 	static Dictionary<string, FieldInfo> fields;
 	
-	static object touch;
+	public object touch;
 
 
 	public float deltaTime { get { return ((Touch)touch).deltaTime; } set { fields["m_TimeDelta"].SetValue(touch, value); } }
@@ -18,11 +18,10 @@ public class TouchCreator
 	public int fingerId { get { return ((Touch)touch).fingerId; } set { fields["m_FingerId"].SetValue(touch, value); } }
 	public Vector2 position { get { return ((Touch)touch).position; } set { fields["m_Position"].SetValue(touch, value); } }
 	public Vector2 rawPosition { get { return ((Touch)touch).rawPosition; } set { fields["m_RawPosition"].SetValue(touch, value); } }
-	public Input _backend = new Input();
 
 	private Vector2 lastPosition;
 
-	public Touch Update()
+	public Touch Update(bool simulatePinch = false)
 	{
 		//PHASE
 		if (deltaPosition.magnitude > EventSystem.current.pixelDragThreshold){
@@ -32,10 +31,14 @@ public class TouchCreator
 		}
 		//DELTA TIME/POSITION
 		deltaTime = Time.deltaTime;
-		position = Input.mousePosition;
-		rawPosition = Input.mousePosition;
+		if (simulatePinch){
+			position = new Vector3(Screen.width - Input.mousePosition.x, Input.mousePosition.y, 0);
+		}else{
+			position = Input.mousePosition;
+		}
+		rawPosition = position;
 		deltaPosition = (lastPosition != Vector2.zero) ? (position - lastPosition) : Vector2.zero;
-		lastPosition = Input.mousePosition;
+		lastPosition = position;
 		return (Touch)touch;
 
 	}
@@ -52,15 +55,19 @@ public class TouchCreator
 
 	}
 
-	public Touch Begin()
+	public Touch Begin(int setFingerId = 0)
 	{
 		phase = TouchPhase.Began;
 		deltaTime = 0f;
-		position = Input.mousePosition;
+		if (setFingerId != 0){
+			position = new Vector3(Screen.width - Input.mousePosition.x, Input.mousePosition.y, 0);
+		}else{
+			position = Input.mousePosition;
+		}
 		deltaPosition = Vector2.zero;
 		lastPosition = Input.mousePosition;
 		tapCount++;
-		fingerId = 0;
+		fingerId = setFingerId;
 		return (Touch)touch;
 	}
 

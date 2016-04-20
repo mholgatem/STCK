@@ -5,20 +5,50 @@ using System.Collections;
 public static class TouchExtension
 {
 
-	//Input.touches[#].TouchPhase.isDone();
-	public static bool isDone(this TouchPhase tPhase)
+	/* ------------ HELPER METHODS ------------ */
+
+	/// <summary>
+	/// Check if Touch is finished
+	/// </summary>
+	/// <returns><c>true</c> if TouchPhase = Ended || Canceled; otherwise, <c>false</c>.</returns>
+	/// <param name="tPhase">TouchPhase</param>
+	public static bool IsDone(this TouchPhase tPhase)
 	{
 		return (tPhase == TouchPhase.Ended || tPhase == TouchPhase.Canceled);
 	}
 
+	/// <summary>
+	/// Pixels to touch units.
+	/// </summary>
+	/// <returns><c>Float</c> pixels converted to TouchHandler.MeasureUnits</returns>
+	/// <param name="pixels">[int]Pixels</param>
+	public static float PixelsToTouchUnits(this int pixels){
+		return pixels / TouchHandler.PixelsPerUnit();
+	}
+
+	/// <summary>
+	/// Pixels to touch units.
+	/// </summary>
+	/// <returns><c>Float</c> pixels converted to TouchHandler.MeasureUnits</returns>
+	/// <param name="pixels">[float]Pixels</param>
 	public static float PixelsToTouchUnits(this float pixels){
 		return pixels / TouchHandler.PixelsPerUnit();
 	}
 
+	/// <summary>
+	/// Pixels to touch units.
+	/// </summary>
+	/// <returns><c>Float</c> pixels converted to TouchHandler.MeasureUnits</returns>
+	/// <param name="pixels">[Vector2]Pixels</param>
 	public static Vector2 PixelsToTouchUnits(this Vector2 pixels){
 		return pixels / TouchHandler.PixelsPerUnit();
 	}
 
+	/// <summary>
+	/// Pixels to touch units.
+	/// </summary>
+	/// <returns><c>Float</c> pixels converted to TouchHandler.MeasureUnits</returns>
+	/// <param name="pixels">[Vector3]Pixels</param>
 	public static Vector3 PixelsToTouchUnits(this Vector3 pixels){
 		return pixels / TouchHandler.PixelsPerUnit();
 	}
@@ -30,8 +60,19 @@ public static class TouchExtension
 	/// </summary>
 	/// <returns>The double swipe direction.</returns>
 	/// <param name="touches">Input.touches.DoubleSwipeDirection()</param>
-	public static TouchHandler.directions DoubleSwipeDirection(this Touch[] touches){
+	public static TouchHandler.directions GetDoubleSwipeDirection(this Touch[] touches){
 		return TouchHandler.DoubleSwipe.Direction();
+	}
+
+
+	/* ------------ PINCH METHODS ------------ */
+
+	/// <summary>
+	/// Set delay before pinch becomes active.
+	/// </summary>
+	/// <param name="pinchDelay">Time that both touches must exceed before pinch begins</param>
+	public static void SetPinchDelay(this Touch[] touches, float pinchDelay = 0.2f){
+		TouchHandler.Pinch.pinchDelay = pinchDelay;
 	}
 
 	/// <summary>
@@ -39,8 +80,8 @@ public static class TouchExtension
 	/// </summary>
 	/// <returns><c>true</c> if is active the specified pinchDelay; otherwise, <c>false</c>.</returns>
 	/// <param name="pinchDelay">time to allow the user to perform some other action</param>
-	public static bool IsPinching(this Touch[] touches, float pinchDelay = 0.2f){
-		return TouchHandler.Pinch.IsActive(pinchDelay);
+	public static bool IsPinching(this Touch[] touches){
+		return TouchHandler.Pinch.active;
 	}
 
 	/// <summary>
@@ -49,8 +90,8 @@ public static class TouchExtension
 	/// <para><c>Negative: </c>Touches moving toward each other.</para>
 	/// </summary>
 	/// <returns>(float) distance in pixels</returns>
-	public static float PinchDistance(this Touch[] touches){
-		return TouchHandler.Pinch.GetDistance();
+	public static float GetPinchDistance(this Touch[] touches){
+		return TouchHandler.Pinch.distance;
 	}
 
 	/// <summary>
@@ -60,8 +101,48 @@ public static class TouchExtension
 	/// <para><c>Greater than 1: </c>Touches moving away from each other.</para>
 	/// </summary>
 	/// <returns>(float) percentage pinch has changed since start</returns>
-	public static float PinchRatio(this Touch[] touches){
-		return TouchHandler.Pinch.GetRatio();
+	public static float GetPinchRatio(this Touch[] touches){
+		return TouchHandler.Pinch.ratio;
+	}
+
+	/// <summary>
+	/// Raycasts at the center of a pinch.
+	/// </summary>
+	/// <returns><c>true</c>, if pinch center hits collider, <c>false</c> otherwise.</returns>
+	/// <param name="touches">Input.Touches.GetPinchRayHit3D(out hit)</param>
+	public static bool GetPinchRayHit3D(this Touch[] touches, out RaycastHit hit){
+		return TouchHandler.Pinch.Raycast3D(out hit);
+	}
+
+	/// <summary>
+	/// Raycasts at the center of a pinch.
+	/// </summary>
+	/// <returns><c>true</c>, if pinch center hits collider, <c>false</c> otherwise.</returns>
+	/// <param name="touches">Input.Touches.GetPinchRayHit3D(out hit)</param>
+	public static bool GetPinchRayHit2D(this Touch[] touches, out RaycastHit2D hit){
+		return TouchHandler.Pinch.Raycast2D(out hit);
+	}
+
+	/// <summary>
+	/// Gets the pinch phase.
+	/// </summary>
+	/// <returns>The pinch phase.</returns>
+	/// <param name="touches">Input.touches.GetPinchPhase()</param>;
+	public static TouchPhase GetPinchPhase(this Touch[] touches){
+		return TouchHandler.Pinch.phase;
+	}
+
+
+	/* ------------ TOUCH INSTANCE METHODS ------------ */
+
+	/// <summary>
+	/// All current touches will raycast.
+	/// RaycastHit is stored in <TouchInstance.objectTouched>
+	/// </summary>
+	/// <returns>TouchInstance[]</returns>
+	/// <param name="touches">Input.touches.GetRayHit3D()</param>
+	public static TouchInstance[] CheckRayHit3D(this Touch[] touches){
+		return TouchHandler.GetRayHit3D();
 	}
 
 	/// <summary>
@@ -70,10 +151,10 @@ public static class TouchExtension
 	/// </summary>
 	/// <returns>TouchInstance[]</returns>
 	/// <param name="touches">Input.touches.GetRayHit3D()</param>
-	public static TouchInstance[] GetRayHit3D(this Touch[] touches){
-		return TouchHandler.GetRayHit3D();
+	public static TouchInstance[] CheckRayHit2D(this Touch[] touches){
+		return TouchHandler.GetRayHit2D();
 	}
-	
+
 	/// <summary>
 	/// Returns Touch.action
 	/// </summary>

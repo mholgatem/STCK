@@ -1,26 +1,20 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System;
 
 public class LobbyServerButton : MonoBehaviour {
 
-	public string ip;
-	public string hostName;
-	public int port;
-	public bool isManualServer = false;
-
-	private GameObject gameClient;
+	public ServerSettings config = new ServerSettings();
 	
-	public void setProperties(string[] server){
-		hostName = server[0]; 
-		port = Convert.ToInt32(server[1]);
-		ip = server[2]; 
-		GetComponentInChildren<Text>().text = hostName;
+	public void setProperties(ServerSettings server){
+		config = server;
+
+		GetComponentInChildren<Text>().text = config.hostName;
 		if (PlayerPrefs.HasKey("autoIP")){
-			if (PlayerPrefs.GetString("autoIP") == ip &&
-			    PlayerPrefs.GetInt("autoPort") == port &&
-			    PlayerPrefs.GetString("autoHost") == hostName){
+			if (PlayerPrefs.GetString("autoIP") == config.IP &&
+			    PlayerPrefs.GetInt("autoPort") == config.portNumber &&
+			    PlayerPrefs.GetString("autoHost") == config.hostName){
 			    	if (Time.realtimeSinceStartup < 3f)
 			    		MakeConnection();
 					else
@@ -30,10 +24,12 @@ public class LobbyServerButton : MonoBehaviour {
 	}
 
 	public void MakeConnection(){
-		Client.serverHostName = hostName;
-		Client.serverIP = ip;
-		Client.serverPort = port;
-		Client.currentInstance.gameObject.SetActive(true);
+		Client.serverHostName = config.hostName;
+		Client.serverIP = config.IP;
+		Client.serverPort = config.portNumber;
+		Client.currentInstance.gameObject.SetActive(true); 
+		Client.secretKey = ClientSettings.SecretKey;
+		Client.salt = ClientSettings.Salt;
 	}
 	
 }

@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
+using System.Security.Cryptography;
 using JsonFx.Json;
  
 public class Client : MonoBehaviour {
@@ -12,50 +13,65 @@ public class Client : MonoBehaviour {
 	public static Client currentInstance;
 	public SocksClient socksClient = new SocksClient();
 	public float rate = .05f;
-	public ImageRenderer IR;
-	public byte[] image;
+
+	// screenshot
+	[HideInInspector]public Screenshot screenshotWindow;
+	[HideInInspector]public byte[] image;
 	private bool newScreenshot = false;
 
 	public static string serverIP = "";
 	public static string serverHostName = "";
 	public static int serverPort = -1;
-	public static List<string> failedHost = new List<string>();
+	public static int packetSize = 1024;
 
-	private string serverMsg = "Not connected";
+	public static List<string> failedHost = new List<string>();
+	public static string secretKey, salt;
+
 	private string commandQueue = "";
 	private string COMMAND_SEPARATOR = ",";
 	private float rateTimer;
 	private string[] queue = new string[100];
 	private int qPlaceholder = 0;
 
-	
-	void Awake () {
+
+	public void Awake(){
 		// SINGLETON
 		if( currentInstance == null ) {
 			currentInstance = this;
-			DontDestroyOnLoad(this.gameObject);
-		}else{
-			Destroy( this.gameObject );
+			DontDestroyOnLoad(this);
+		}else if (currentInstance != this){
+			Destroy (this.gameObject);
 		}
 	}
 	
 	public void OnEnable ()  {
-		serverMsg = "Connecting...";
 		socksClient.ServerMessage += MessageDecoder;
-		Connect();
+		if (serverIP != "" && serverPort >= 0)
+			Connect();
+	}
 
+	public void OnDisable () {
+		Disconnect();
+	}
+
+	void OnApplicationQuit () {
+		Disconnect();
 	}
 	
 	void Update() {
+
+		// disable client when in lobby
+		if (Application.loadedLevel == 0){
+			this.gameObject.SetActive (false);
+			return;
+		}
+		
 		if (newScreenshot){
-			if (IR == null)
-				IR = GameObject.FindGameObjectWithTag("ScreenCap").GetComponent<ImageRenderer>();
-			IR.ScreenShot(image);
+			if (screenshotWindow == null)
+				screenshotWindow = GameObject.FindGameObjectWithTag("ScreenCap").GetComponent<Screenshot>();
+			screenshotWindow.LoadImage(image);
 			newScreenshot = false;
 		}
-
-		if (Application.loadedLevel == 0)
-			this.gameObject.SetActive (false);
 
 		if (commandQueue.Length > 0 && rateTimer > rate) {
 			qPlaceholder++;
@@ -68,41 +84,41 @@ public class Client : MonoBehaviour {
 			socksClient.SendData(queue[qPlaceholder]);
 			commandQueue = "";
 			rateTimer = 0;
-		}else{
+		}else if (rateTimer <= rate){
 			rateTimer += Time.deltaTime;
 		}
-
-		
-	}
-	
-	public string GetLastServerMessage() {
-		return serverMsg;	
 	}
 	
 	public void Connect() {
-
 		bool isConnected = socksClient.ConnectResult( serverIP, serverPort );
 		if(isConnected) {
-			serverMsg = "Connected.";
-			if (Application.loadedLevel == 0) 
+			if (Application.loadedLevel == 0) {
 				Application.LoadLevel (1);
+			}
 		}
 		else {
-			serverMsg = "Connection Failed.";
-			failedHost.Add(serverHostName);
-			this.gameObject.SetActive(false);
+			socksClient.Disconnect();
+			MessageBox.Show ("Try Again?","Could not connect to server.\nRetry?", MessageBox.YesNo, UserReconnectResponse);
 		}
 		
+	}
+
+	void UserReconnectResponse(UserResponse answer){
+		if (answer == UserResponse.Yes){
+			Connect();
+		}else{
+			Disconnect();
+			failedHost.Add(serverHostName);
+			Application.LoadLevel(0);
+		}
 	}
 
 	public void SendButtonState(string cmd, string type = "EV_KEY", int state = 0) {
 
 		if(socksClient.isConnectedToServer()) {
 			commandQueue += "{\"key\":\""+cmd+"\",\"type\":\""+type+"\",\"state\":\""+state.ToString()+"\"}" + COMMAND_SEPARATOR;
-			//Connect();
-		}
-		else {
-			serverMsg = "Not connected to server. Press Enter to connect.";
+		}else {
+			MessageBox.Show ("Reconnect?","Unexpectedly disconnected from server.\nTry to reconnect?", MessageBox.YesNo, UserReconnectResponse);
 		}
 	}
 
@@ -110,34 +126,52 @@ public class Client : MonoBehaviour {
 		
 		if(socksClient.isConnectedToServer()) {
 			commandQueue += "{\"value\":\""+axisValue+"\",\"type\":\""+type+"\"}" + COMMAND_SEPARATOR;
-			//Connect();
+		}else {
+			MessageBox.Show ("Reconnect?","Unexpectedly disconnected from server.\nTry to reconnect?", MessageBox.YesNo, UserReconnectResponse);
 		}
-		else {
-			serverMsg = "Not connected to server. Press Enter to connect.";
+	}
+
+	public void SetServerOption(string cmd) {
+		if(socksClient.isConnectedToServer()) {
+			socksClient.SendData("{\"-1\" : [{\"option\":\""+cmd+"\",\"type\":\"SET_OPTION\",\"value\":\"begin\"}]}");
+		}else {
+			MessageBox.Show ("Reconnect?","Unexpectedly disconnected from server.\nTry to reconnect?", MessageBox.YesNo, UserReconnectResponse);
 		}
 	}
 
 	public void SendCommand(string cmd) {
 		if(socksClient.isConnectedToServer()) {
 			socksClient.SendData("{\"-1\" : [{\"key\":\""+cmd+"\",\"type\":\"EV_KEY\"}]}");
-			//Connect();
-		}
-		else {
-			serverMsg = "Not connected to server. Press Enter to connect.";
+		}else if(cmd != "disconnect" && cmd != "srv_shutdown"){
+			MessageBox.Show ("disconnectReconnect?","Unexpectedly disconnected from server.\nTry to reconnect?", MessageBox.YesNo, UserReconnectResponse);
 		}
 	}
 	
 	public void Disconnect() {
-		SendCommand("disconnect");
+		try
+		{
+			SendCommand("disconnect");
+			socksClient.Disconnect();
+			socksClient.ServerMessage -= MessageDecoder;
+		}
+		catch{}
 	}
 	
 	public void Shutdown() {
-		SendCommand("srv_shutdown");
+		try
+		{
+			SendCommand("srv_shutdown");
+			socksClient.Disconnect();
+			socksClient.ServerMessage -= MessageDecoder;
+		}
+		catch{}
 	}
 
+	/// <summary>
+	/// method subscribed to [socksClient.ServerMessage]
+	/// </summary>
 	void MessageDecoder(string msg) {
-
-		serverMsg = "Message from server: "+msg+"\n\n";
+		
 		Hashtable hash = JsonReader.Deserialize<Hashtable>(msg);
 		if(hash.ContainsKey("screen")){
 			image = Convert.FromBase64String(hash["screen"].ToString());
@@ -145,25 +179,12 @@ public class Client : MonoBehaviour {
 		}
 		if(hash.ContainsKey("disconnect")) {
 			socksClient.Disconnect();
-			serverMsg += "Disconnected from server.";
 		}
 		else if(hash.ContainsKey("srv_shutdown")) {
 			socksClient.Disconnect();
-			serverMsg += "Disconnected from server and server killed.";
 		}
 		else {
-			serverMsg += "Server command not supported.";
 		}
 	}
  
-	void OnApplicationQuit () {
-		
-		try
-		{
-			SendCommand("disconnect");
-			socksClient.ServerMessage -= MessageDecoder;
-		}
-		catch{}
-		
-	}
 }

@@ -30,7 +30,7 @@ public class TouchHandler : MonoBehaviour{
 
 	public static TouchHandler currentInstance;
 	public bool dontDestroyOnLoad = false;
-	public bool displayStats = false;
+	public bool displayStatsInEditor = false;
 
 	[Tooltip("Time allowed between taps before reset")]
 	public float tapTimeout = 0.15f;
@@ -54,6 +54,8 @@ public class TouchHandler : MonoBehaviour{
 	public static float _pinchDistance;
 	public static float _pinchRatio;
 
+	public Sprite touchSprite;
+
 	public enum actions{None, Down, LongPress, Tap, Swipe, Drag}; 
 	public enum directions{None, Up, Down, Left, Right};
 	public enum UnitTypes{Millimeter, Centimeter, Inch, Pixel};
@@ -63,8 +65,8 @@ public class TouchHandler : MonoBehaviour{
 
 	// Use mouse to simulate touches
 	public bool simulateTouchWithMouse = false;
-	public TouchCreator tc = new TouchCreator();
-	private Touch fakeTouch;
+	public TouchCreator[] tc = new TouchCreator[2];
+	private Touch fakeTouch, simulatePinch;
 
 	void Awake () {
 		if (dontDestroyOnLoad){
@@ -76,6 +78,10 @@ public class TouchHandler : MonoBehaviour{
 				Destroy( this.gameObject );
 			}
 		}
+#if UNITY_EDITOR
+		if (simulateTouchWithMouse)
+			Input.simulateMouseWithTouches = false;
+#endif
 	}
 
 	void Start () {
@@ -85,28 +91,46 @@ public class TouchHandler : MonoBehaviour{
 		_longPressTime = longPressTime;
 		_dragThreshold = UnitsToPixels(dragThreshold);
 		_swipeThreshold = swipeThreshold;
-		fakeTouch = tc.CreateEmpty();
-
+		tc[0] = new TouchCreator();
+		tc[1] = new TouchCreator();
+		fakeTouch = tc[0].CreateEmpty();
+		simulatePinch = tc[1].CreateEmpty();
+		if (Input.touchSupported && Input.multiTouchEnabled)
+			simulateTouchWithMouse = false;
 	}
 
 	public void AssignTouches(){
-
 		if (!simulateTouchWithMouse){
 			touches = (Touch[])Input.touches.Clone ();
 		}else{
 			//simulate touch with mouse
-			if(Input.GetMouseButtonDown(0)){
-				fakeTouch = tc.Begin ();
-				touches = new Touch[]{fakeTouch};
-			}else if (Input.GetMouseButton(0)){
-				fakeTouch = tc.Update ();
-				touches[0] = fakeTouch;
-			}else if (Input.GetMouseButtonUp(0)){
-				fakeTouch = tc.End();
-				touches[0] = fakeTouch;
+			if(Input.GetKeyDown(KeyCode.LeftControl)){
+				simulatePinch = tc[1].Begin(1);
+			}else if (Input.GetKey(KeyCode.LeftControl)){
+				simulatePinch = tc[1].Update (true);
+			}else if (Input.GetKeyUp(KeyCode.LeftControl)){
+				simulatePinch = tc[1].End();
 			}else{
-				fakeTouch = tc.CreateEmpty ();
-				touches = new Touch[]{};
+				simulatePinch = new Touch();
+			}
+
+			if(Input.GetMouseButtonDown(0)){
+				fakeTouch = tc[0].Begin ();
+				touches = new Touch[]{fakeTouch, simulatePinch};
+			}else if (Input.GetMouseButton(0)){
+				fakeTouch = tc[0].Update ();
+				touches[0] = fakeTouch;
+				touches[1] = simulatePinch;
+			}else if (Input.GetMouseButtonUp(0)){
+				fakeTouch = tc[0].End();
+				touches[0] = fakeTouch;
+				if (simulatePinch.fingerId == 1){
+					simulatePinch = tc[1].End ();
+					touches[1] = simulatePinch;
+				}
+			}else{
+				fakeTouch = tc[0].CreateEmpty ();
+				touches = (Touch[])Input.touches.Clone ();
 			}
 		}
 	}
@@ -131,13 +155,15 @@ public class TouchHandler : MonoBehaviour{
 			}
 		}
 
+		Pinch.Update();
+
 	}
 
-	#if UNITY_EDITOR
+#if UNITY_EDITOR
 	void OnGUI()
 	{
 
-		if (displayStats){
+		if (displayStatsInEditor){
 			Color fontColor = Color.white;
 			int w = Screen.width, h = Screen.height;
 			
@@ -147,12 +173,16 @@ public class TouchHandler : MonoBehaviour{
 			style.fontSize = h / 50;
 			style.normal.textColor = fontColor;
 
-			string text = string.Format("Is Pinching:\t{0}", Pinch.IsActive());
-			text += string.Format("\nPinch Dist.:\t{0:0.0}px", Pinch.GetDistance());
-			text += string.Format("\nPinch Ratio:\t{0:0%}", Pinch.GetRatio());
+			string text = string.Format("Is Pinching:\t{0}", Pinch.active);
+			text += string.Format("\nPinch Dist.:\t{0:0.0}px", Pinch.distance);
+			text += string.Format("\nPinch Ratio:\t{0:0%}", Pinch.ratio);
 			text += "\n----------------------------------";
 			int y = h/10;
 			GUI.Label(rect, text, style);
+
+			Texture t = touchSprite.texture;
+			Rect tr = touchSprite.textureRect;
+			Rect r = new Rect(tr.x / t.width, tr.y / t.height, tr.width / t.width, tr.height / t.height );
 			for (int i = 0; i < _touchCache.Count; i++){
 				rect = new Rect(5, (h / 50) * i * 9 + y, w, h / 50);
 				style.alignment = TextAnchor.UpperLeft;
@@ -169,11 +199,16 @@ public class TouchHandler : MonoBehaviour{
 					text += "\n----------------------------------";
 				}
 				GUI.Label(rect, text, style);
+				GUI.DrawTextureWithTexCoords(new Rect(_touchCache[i].currentPos.x - (t.width/2), Screen.height - _touchCache[i].currentPos.y - (t.height/2), tr.width, tr.height), t, r);
 			}
+
+
+			
+
 		}
 	}
 	#endif
-
+	
 	//HELPERS
 	private const float inchesToCentimeters = 2.54f;
 	private static float _screenPixelsPerCm = 0f;
@@ -266,6 +301,19 @@ public class TouchHandler : MonoBehaviour{
 		return _touchCache.ToArray();
 	}
 
+	//  RAYCAST FOR TOUCHED OBJECTS
+	/// <summary>
+	/// <para>Returns TouchInstance[].</para>
+	/// <para>Same method as: Input.touches.GetRayHit3D();</para>
+	/// </summary>
+	/// <returns>The ray hit3 d.</returns>
+	public static TouchInstance[] GetRayHit2D(){
+		foreach(TouchInstance t in _touchCache){
+			t.CheckRayHit2D();
+		}
+		return _touchCache.ToArray();
+	}
+
 	//  TWO FINGER SWIPE
 	/// <summary>
 	/// <para>Get direction of two finger swipe.</para>
@@ -285,37 +333,88 @@ public class TouchHandler : MonoBehaviour{
 
 	//  PINCH CLASS
 	/// <summary>
-	/// <para>Pinch Class, contains methods:</para>
-	/// <para>isActive(), GetDistance(), GetRatio()</para>
+	/// <para>Pinch Class, contains properties:</para>
+	/// <para>[TouchPhase]phase, [bool]active, [float]pinchDelay</para>
+	/// <para>[float](delta)distance, [float](delta)ratio</para>
 	/// </summary>
 	public static class Pinch{
 
-		/// <summary>
-		/// Determines if user is pinching. Requires exactly 2 touches.
-		/// </summary>
-		/// <returns><c>true</c> if is active the specified pinchDelay; otherwise, <c>false</c>.</returns>
-		/// <param name="pinchDelay">time to allow the user to perform some other action</param>
-		public static bool IsActive(float pinchDelay = .2f){
-			if (_touchCache.Count == 2){
-				return (_touchCache[1].action == TouchHandler.actions.Drag ||
-				        _touchCache[0].action == TouchHandler.actions.Drag) &&
-						(_touchCache[0].totalPressTime > pinchDelay &&
-					 	_touchCache[1].totalPressTime > pinchDelay);
+		public static TouchPhase phase = TouchPhase.Ended;
+		public static bool active = false;
+		public static float pinchDelay = 0.2f;
+		public static float distance = 0f;
+		public static float ratio = 1f;
+
+		private static float lastDistance = 0f;
+		private static float lastRatio = 1f;
+
+		
+		public static float deltaDistance{
+			get{
+				float delta = distance - lastDistance;
+				return delta;
 			}
-			return false;
 		}
 
+		public static float deltaRatio{
+			get{
+				float delta = ratio - lastRatio;
+				return delta;
+			}
+		}
+
+		/// <summary>
+		/// Update pinch properties
+		/// </summary>
+		public static void Update(){
+
+			active = GetPinchState();
+			distance = GetDistance();
+			ratio = GetRatio();
+
+			if (active){
+				if (phase == TouchPhase.Ended){
+					phase = TouchPhase.Began;
+				}else{
+					if (Math.Abs(deltaDistance) > TouchHandler._dragThreshold){
+						phase = TouchPhase.Moved;
+					}else{
+						phase = TouchPhase.Stationary;
+					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Gets the state of the pinch.
+		/// </summary>
+		/// <returns><c>true</c>, if user is pinching, <c>false</c> otherwise.</returns>
+		private static bool GetPinchState(){
+			if (_touchCache.Count == 2){
+				return (_touchCache[1].action != TouchHandler.actions.Swipe &&
+				          _touchCache[0].action != TouchHandler.actions.Swipe) &&
+					(_touchCache[0].totalPressTime > pinchDelay &&
+					 _touchCache[1].totalPressTime > pinchDelay);
+			}
+
+			phase = TouchPhase.Ended;
+			return false;
+			
+		}
+		
 		/// <summary>
 		/// <para>Gets Distance of pinch in pixels.</para>
 		/// <para><c>Positive: </c>Touches moving away from each other.</para>
 		/// <para><c>Negative: </c>Touches moving toward each other.</para>
 		/// </summary>
 		/// <returns>float</returns>
-		public static float GetDistance(){
-			if (IsActive()){
+		private static float GetDistance(){
+			if (active){
+				lastDistance = distance;
 				return Vector2.Distance(_touchCache[0].currentPos, _touchCache[1].currentPos) - 
 						Vector2.Distance (_touchCache[0].startPos, _touchCache[1].startPos);
 			}
+			lastDistance = 0;
 			return 0;
 		}
 
@@ -327,12 +426,65 @@ public class TouchHandler : MonoBehaviour{
 		/// <para><c>Less 1: </c>Touches moving toward each other.</para>
 		/// </summary>
 		/// <returns>float</returns>
-		public static float GetRatio(){
-			if (IsActive()){
+		private static float GetRatio(){
+			if (active){
+				lastRatio = ratio;
 				return Vector2.Distance(_touchCache[0].currentPos, _touchCache[1].currentPos) / 
 						Vector2.Distance (_touchCache[0].startPos, _touchCache[1].startPos);
 			}
+			lastRatio = 1;
 			return 1;
+		}
+
+		// CHECK IF USER IS PINCHING SOMETHING
+		/// <summary>
+		/// Raycast from center of pinch.
+		/// </summary>
+		/// <returns><c>true</c>, if ray hits a collider, <c>false</c> otherwise.</returns>
+		/// <param name="hit">RaycastHit</param>
+		public static bool Raycast3D(out RaycastHit hit){
+
+			Vector2 center = Vector2.one;
+			Ray ray;
+
+			if (active){
+				center = (_touchCache[0].currentPos + _touchCache[1].currentPos) / 2;
+				ray = Camera.main.ScreenPointToRay(center);
+				return Physics.Raycast(ray, out hit);
+			}else{
+				/* this part is only here because 'hit'
+				 * must be assigned before returning.
+				 * we may accidentally hit something,
+				 * but will always return false */
+				center *= (-1000000);
+				ray = Camera.main.ScreenPointToRay(center);
+				Physics.Raycast(ray, out hit);
+				return false;
+			}
+		}
+
+		// CHECK IF USER IS PINCHING SOMETHING
+		/// <summary>
+		/// Raycast from center of pinch.
+		/// </summary>
+		/// <returns><c>true</c>, if ray hits a collider, <c>false</c> otherwise.</returns>
+		/// <param name="hit">RaycastHit</param>
+		public static bool Raycast2D(out RaycastHit2D hit){
+			Vector2 center = Vector2.one;
+			
+			if (active){
+				center = Camera.main.ScreenToWorldPoint((_touchCache[0].currentPos + _touchCache[1].currentPos) / 2);
+				hit = Physics2D.Raycast(center, Vector2.zero);
+				return hit.collider != null;
+			}else{
+				/* this part is only here because 'hit'
+				 * must be assigned before returning.
+				 * we may accidentally hit something,
+				 * but will always return false */
+				center *= (-1000000);
+				hit = Physics2D.Raycast(center, Vector2.zero);
+				return false;
+			}
 		}
 	}
 	

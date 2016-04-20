@@ -1,20 +1,13 @@
 ﻿<Properties>
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\ImageRenderer.cs">
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Touch\TouchHandler.cs">
     <Files>
-      <File FileName="Assets\Scripts\ImageRenderer.cs" Line="22" Column="16" />
-      <File FileName="Assets\Scripts\Network\Client.cs" Line="146" Column="39" />
-      <File FileName="Assets\Scripts\Network\UdpBroadcast.cs" Line="292" Column="12" />
-      <File FileName="Assets\temp\Assets\scripts\AxisReporting.cs" Line="1" Column="1" />
-      <File FileName="Assets\temp\Assets\scripts\ButtonHandler.cs" Line="1" Column="1" />
-      <File FileName="Assets\temp\Assets\scripts\KeyboardHandler.cs" Line="1" Column="1" />
-      <File FileName="Assets\temp\Assets\scripts\WheelReporting.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Network\LobbyServerButton.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\PersistentVar.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Network\SocksClient.cs" Line="92" Column="34" />
-      <File FileName="Assets\Scripts\Touch\TouchHandler.cs" Line="24" Column="21" />
-      <File FileName="Assets\Scripts\Touch\support scripts\ScriptOrder.cs" Line="6" Column="7" />
-      <File FileName="Assets\Scripts\Touch\support scripts\TouchExtension.cs" Line="1" Column="19" />
+      <File FileName="Assets\Scripts\Main\PlayerActionInterpreter.cs" Line="64" Column="7" />
+      <File FileName="Assets\Scripts\Touch\support scripts\TouchExtension.cs" Line="155" Column="29" />
+      <File FileName="Assets\Scripts\Touch\TouchHandler.cs" Line="130" Column="6" />
+      <File FileName="Assets\Scripts\Touch\support scripts\TouchCreator.cs" Line="38" Column="4" />
+      <File FileName="Assets\temp\Assets\scripts\MouseDrag.cs" Line="44" Column="38" />
+      <File FileName="Assets\Scripts\Touch\support scripts\TouchInstance.cs" Line="141" Column="3" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

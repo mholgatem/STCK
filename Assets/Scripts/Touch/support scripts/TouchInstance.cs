@@ -25,7 +25,8 @@ public class TouchInstance {
 	public Vector2 startPos;
 	public Vector2 currentPos;
 	public TouchPhase phase;
-	public RaycastHit objectTouched;
+	public RaycastHit raycastHit;
+	public RaycastHit2D raycastHit2D;
 	
 	private float tapTimer;
 	private Vector2 swipeStartPos;
@@ -47,7 +48,7 @@ public class TouchInstance {
 	}
 
 	//SWIPE DIRECTION
-	private TouchHandler.directions getSwipeDirection(){
+	private TouchHandler.directions GetSwipeDirection(){
 		Vector2 direction = _touch.position - swipeStartPos;
 	
 		if (Mathf.Abs (direction.x) > Mathf.Abs(direction.y)){
@@ -64,19 +65,14 @@ public class TouchInstance {
 		return TouchHandler.directions.None;
 	}
 
-	//ACTION == NONE OR DOWN
-	private bool noneOrDown(){
-		return (action == TouchHandler.actions.None || action == TouchHandler.actions.Down);
-	}
-
 	//SET ACTION
-	private void setAction(){
+	private void SetAction(){
 
 		if (hasMoved){
 			//SWIPE
 			if (speed > TouchHandler._swipeThreshold){
 				action = TouchHandler.actions.Swipe;
-				swipeDirection = getSwipeDirection();
+				swipeDirection = GetSwipeDirection();
 			}else{
 				swipeStartPos = currentPos;
 			}
@@ -87,7 +83,7 @@ public class TouchInstance {
 
 		}else{
 			//TAP
-			if (_touch.phase.isDone() && 
+			if (_touch.phase.IsDone() && 
 			    currentPressTime < TouchHandler._longPressTime){
 				action = TouchHandler.actions.Tap;
 			}
@@ -114,8 +110,8 @@ public class TouchInstance {
 	}
 
 
-	//RETURN CORRECT TOUCH
-	public Touch getTouchById(int fingerId){
+	// RETURN CORRECT TOUCH
+	public Touch GetTouchById(int fingerId){
 		foreach (Touch t in TouchHandler.touches){
 			if (t.fingerId == fingerId)
 				return t;
@@ -124,17 +120,23 @@ public class TouchInstance {
 
 	}
 
-	//CHECK IF USER IS TOUCHING SOMETHING
+	// CHECK IF USER IS TOUCHING SOMETHING 3D
 	public void CheckRayHit(){
 		Ray ray = Camera.main.ScreenPointToRay (currentPos);
-		Physics.Raycast(ray, out objectTouched);
+		Physics.Raycast(ray, out raycastHit);
 	}
 
-	//UPDATE CALLED BY TouchHandler
+	// CHECK IF USER IS TOUCHING SOMETHING 2D
+	public void CheckRayHit2D(){
+		Vector2 ray = Camera.main.ScreenToWorldPoint (currentPos);
+		raycastHit2D = Physics2D.Raycast(ray, Vector2.zero);
+	}
+
+	// UPDATE CALLED BY TouchHandler
 	public void Update(){
 
 		//refresh _touch
-		_touch = getTouchById (fingerId);
+		_touch = GetTouchById (fingerId);
 		phase = _touch.phase;
 
 		//add a new tap
@@ -156,7 +158,7 @@ public class TouchInstance {
 
 		//start checking for timeout
 		// if touch is done
-		if (_touch.phase.isDone()){
+		if (_touch.phase.IsDone()){
 			tapTimer += Time.deltaTime;
 			if (tapTimer > TouchHandler._tapTimeout){
 				TouchHandler._touchCache.Remove(this);
@@ -170,7 +172,7 @@ public class TouchInstance {
 		if (overrideAction != TouchHandler.actions.None){
 			action = overrideAction;
 		}else{ 
-			setAction();
+			SetAction();
 		}
 		
 		

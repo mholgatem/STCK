@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Security.Cryptography;
-
+using JsonFx.Json;
 
 
 [System.Serializable]
@@ -29,173 +29,116 @@ public class UdpBroadcast : MonoBehaviour {
 	
 	// receiving Thread
 	Thread receiveThread;
-	UdpClient client;
-	
-	// public
-	[Tooltip("Seconds between broadcast pings")]
-	[Range(0f, 100f)] public float pingRate = 10f;
+	private bool runThread = true;
+
+	// UDP Broadcast Client
+	UdpClient bcastClient;
+	public static UdpBroadcast currentInstance;
+
+	// set prefabs + link game objects
 	public Text overlayText;
-
-
 	public GameObject buttonTemplate;
 
 	[Header("Settings Menu Objects")]
 	public settingObjects settings;
-	[HideInInspector] public List<string[]> servers = new List<string[]>();
 
-	private List<string[]> addresses = new List<string[]>();
+	// internals to keep track
+	[HideInInspector] public List<ServerSettings> servers = new List<ServerSettings>();
+	private List<ServerSettings> addresses = new List<ServerSettings>();
 	private float pingTimer;
 	private GameObject ServerList;
-	private string secretKey, defaultKey = "*4kap),dci30dm?";
-	private string salt = "a$fk^fkj69)-YU";
-
-	private string defaultBroadcastAddress = "255.255.255.255:55535";
-	private string broadcastIP = "255.255.255.255";
-	private int broadcastPort = 55535;
-	
 
 
 	void Awake () {
-		//force application to framerate of 30 to avoid
-		//battery consumption
+		// force application to framerate of 30 to avoid
+		// battery consumption
 		QualitySettings.vSyncCount = 0;  // VSync must be disabled
 		Application.targetFrameRate = 30;
 	}
 
 	public void Start(){
+		// set static currentInstance for easy access
+		currentInstance = this;
 
-		// SAVED SETTINGS
-		if (PlayerPrefs.HasKey("broadcastAddress"))
-			SetBroadcast(PlayerPrefs.GetString("broadcastAddress"));
+		// register CloseMenu method
+		PlayerActionInterpreter.EscapePressed += CloseMenu;
 
-		// secretKey
-		if (PlayerPrefs.HasKey("uid"))
-			setSecretKey(PlayerPrefs.GetString("uid"));
-		
-		if (PlayerPrefs.HasKey("pingRate"))
-			setPingRate(PlayerPrefs.GetFloat("pingRate"));
-
-		if (PlayerPrefs.HasKey("manualIP"))
-			settings.manualServers.text = PlayerPrefs.GetString("manualIP");
-
-		//Find server list
+		// Find server list
 		ServerList = GameObject.Find("ServerList/Scroll View/Viewport/Content");
 
-		setManualServer();
+		// BROADCAST SETTINGS
+		settings.broadcastToggle.isOn = ClientSettings.BroadcastInvitation;
+		settings.broadcastIP.text = ClientSettings.BroadcastAddress;
 
+		// SECRET KEY SETTINGS
+		settings.keyField.text = ClientSettings.SecretKey;
+
+		// PING RATE SETTINGS
+		settings.pingSlider.value = ClientSettings.BroadcastPingRate;
+		settings.pingValue.text = ClientSettings.BroadcastPingRate.ToString() + "s";
+
+		// MANUAL IP SETTINGS
+		settings.manualServers.text = ClientSettings.ManualIP;
+		SetManualServers();
+
+		// START RECEIVING
 		receiveThread = new Thread(
 			new ThreadStart(ReceiveData));
 		receiveThread.IsBackground = true;
 		receiveThread.Start();
-		
-		Invite(secretKey + GetLocalIP());
+
+		// Broadcast invitation
+		pingTimer = ClientSettings.BroadcastPingRate;
 	}
 
 	void Update(){
 
+		// CHECK IF ANY NEW ADDRESSES
 		if (addresses.Count > servers.Count)
 			addServerButton();
 
-		if (pingTimer >= pingRate){
-			Invite(secretKey + GetLocalIP());
-			pingTimer = 0f;
-		}else{
-			pingTimer += Time.deltaTime;
-		}
-
-		if (Input.GetKeyDown(KeyCode.Escape))
-		{
-			if (settings.settingMenu.activeInHierarchy)
-				settings.menuToggle.isOn = false;
-			else
-				Application.Quit();
-		}
-	}
-
-
-	private string GetLocalIP(){
-		IPHostEntry host;
-		string localIP = "?";
-		host = Dns.GetHostEntry(Dns.GetHostName());
-		foreach (IPAddress ip in host.AddressList)
-		{
-			if (ip.AddressFamily == AddressFamily.InterNetwork)
-			{
-				localIP = ip.ToString();
+		// IF USER WANTS TO BROADCAST INVITATION:
+		if (ClientSettings.BroadcastInvitation){
+			if (pingTimer >= ClientSettings.BroadcastPingRate){
+				Invite();
+				pingTimer = 0f;
+			}else{
+				pingTimer += Time.deltaTime;
 			}
 		}
-		return localIP;
-
+		
 	}
 
-	public void SetBroadcast(string addr){
-		string[] temp = addr.Split (':');
-		// set ip = addr or default
-		if (!string.IsNullOrEmpty(temp[0])){
-			broadcastIP = temp[0];
-		}else{
-			broadcastIP = defaultBroadcastAddress.Split (':')[0];
+	/* CLEANUP */
+	void OnDisable(){ 
+		if ( receiveThread!= null) {
+			runThread = false;
+			receiveThread.Abort ();
 		}
-		// set port = addr or default
-		if (temp.Length > 1){
-			broadcastPort = Int32.Parse(temp[1]);
-		}else{
-			broadcastPort = Int32.Parse(defaultBroadcastAddress.Split (':')[1]);
-		}
-		// save settings
-		settings.broadcastIP.text = string.Format("{0}:{1}",broadcastIP,broadcastPort);
-		PlayerPrefs.SetString("broadcastAddress", string.Format("{0}:{1}",broadcastIP,broadcastPort));
-		PlayerPrefs.Save ();
-	}
+		bcastClient.Close();
+	} 
 
-	public void setSecretKey(string newKey){
-		//verify valid key
-		if (string.IsNullOrEmpty(newKey))
-			newKey = defaultKey;
-
-		//set secret key accordingly
-		secretKey = newKey;
-		if (secretKey != settings.keyField.text)
-			settings.keyField.text = secretKey;
-		PlayerPrefs.SetString("uid", secretKey);
-		PlayerPrefs.Save ();
-	}
-
-	public void ResetSecretKey(){
-		secretKey = defaultKey;
-		settings.keyField.text = defaultKey;
-		PlayerPrefs.SetString("uid", defaultKey);
-		PlayerPrefs.Save ();
-	}
-
-	public void setPingRate(float value){
-		pingRate = value;
-		settings.pingValue.text = value.ToString() + "s";
-		if (pingRate != settings.pingSlider.value)
-			settings.pingSlider.value = pingRate;
-		PlayerPrefs.SetFloat("pingRate", pingRate);
-		PlayerPrefs.Save ();
-	}
-
-	public void setManualServer(){
-		char[] delimiterChars = { '{', '}',':' };
-		string[] addressLines = settings.manualServers.text.Split ('\n');
+	/* PARSE AND ADD MANUAL SERVERS */
+	public void AddManualServers(){
+		ClientSettings.ManualIP = settings.manualServers.text;
+		char[] delimiterChars = { ':' };
+		string[] addressLines = ClientSettings.ManualIP.Split ('\n');
 		foreach(string line in addressLines){
-			string[] address = line.Split(delimiterChars);
-			if (address.Length > 1){
-				address = new string[]{address.Length == 3 ? address[2] : address[0], address[1], address[0]};
+			string[] temp = line.Split(delimiterChars);
+			if (temp.Length > 1){
+				temp = new string[]{temp.Length == 3 ? temp[2] : temp[0], temp[1], temp[0]};
+				ServerSettings address = new ServerSettings(temp);
+				address.wasManuallyAdded = true;
 				addresses.Add (address);
-				//addresses.Add (settings.manualServers.text.Split(delimiterChars));
 				addServerButton();
 			}
 		}
-		PlayerPrefs.SetString("manualIP", settings.manualServers.text);
-		PlayerPrefs.Save ();
 	}
 
+	/* ADD NEW SERVERS TO LIST */
 	public void addServerButton(){
-		foreach(string[] address in addresses){
-			if (!servers.Exists(x => x[0] == address[0]) && !address[0].Contains(GetLocalIP()))
+		foreach(ServerSettings address in addresses){
+			if (!servers.Exists(x => x.IP == address.IP) && !address.IP.Contains(ClientSettings.ClientIP))
 			{
 				servers.Add(address);
 				GameObject button = Instantiate(buttonTemplate);
@@ -204,29 +147,18 @@ public class UdpBroadcast : MonoBehaviour {
 				button.GetComponent<LobbyServerButton>().setProperties(address);
 			}
 		}
-		addresses.Clear();
 	}
 
-	public void removeServerButton(){
-		LobbyServerButton[] buttons = ServerList.GetComponentsInChildren<LobbyServerButton>();
-		foreach(LobbyServerButton b in buttons){
-			if (b.hostName == PlayerPrefs.GetString("manualIP") &&
-			    b.port.ToString() == PlayerPrefs.GetString("manualPort")){
-				Destroy(b.gameObject);
-				setManualServer();
-			}
-		}
-	}
-
+	/* IF AUTO-CONNECT TOGGLE SELECTED */
 	public void setAutoConnect(bool isActive){
 		ToggleGroup tGroup = ServerList.GetComponent<ToggleGroup>();
 		Toggle activeToggle = tGroup.GetActive();
 		if (isActive || activeToggle == null){
 			if (activeToggle){
 				LobbyServerButton autoConn = activeToggle.GetComponentInParent<LobbyServerButton>();
-				PlayerPrefs.SetString("autoIP", autoConn.ip);
-				PlayerPrefs.SetInt("autoPort", autoConn.port);
-				PlayerPrefs.SetString("autoHost", autoConn.hostName);
+				PlayerPrefs.SetString("autoIP", autoConn.config.IP);
+				PlayerPrefs.SetInt("autoPort", autoConn.config.portNumber);
+				PlayerPrefs.SetString("autoHost", autoConn.config.hostName);
 				PlayerPrefs.Save ();
 			}else{
 				PlayerPrefs.DeleteKey("autoIP");
@@ -238,61 +170,112 @@ public class UdpBroadcast : MonoBehaviour {
 
 	}
 
-	//broadcast encrypted message
-	public void Invite(string message) 
+	/* BROADCAST ENCRYPTED INVITATION */
+	public void Invite() 
 	{
 		Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram,
 		                      ProtocolType.Udp);
 		s.EnableBroadcast = true;
-		IPAddress broadcast = IPAddress.Parse(broadcastIP);
-		
-		string encrypted = CipherUtility.Encrypt<AesManaged>(message, secretKey , salt);
+		IPAddress broadcast = IPAddress.Parse(ClientSettings.BroadcastIP);
+		IPEndPoint endPoint = new IPEndPoint(broadcast, ClientSettings.BroadcastPort);
+
+		string message = ClientSettings.SecretKey + ClientSettings.ClientIP;
+		string encrypted = CipherUtility.Encrypt<AesManaged>(message, ClientSettings.SecretKey , ClientSettings.Salt);
 		byte[] sendbuf = Encoding.ASCII.GetBytes(encrypted);
-		
-		IPEndPoint ep = new IPEndPoint(broadcast, broadcastPort);
-		
-		Debug.Log ("invite " + message);
-		s.SendTo(sendbuf, ep);
+
+		s.SendTo(sendbuf, endPoint);
 	}
 
-	// receive thread
+	/* ASYNCHRONOUS RECEIVE THREAD */
 	private  void ReceiveData()
-	{
-		client = new UdpClient(broadcastPort);
-		while (true)
+	{	
+		bcastClient = new UdpClient(ClientSettings.BroadcastPort);
+		while (runThread)
 		{
-			
 			try
 			{
 				IPEndPoint anyIP = new IPEndPoint(IPAddress.Any, 0);
-				byte[] data = client.Receive(ref anyIP);
-				string text = Encoding.UTF8.GetString(data);
 
+				byte[] data = bcastClient.Receive(ref anyIP);
+				string senderIP = anyIP.ToString().Split (':')[0];
 
-				char[] delimiterChars = { '{', '}',':' };
+				if (!addresses.Exists(x => x.IP == senderIP) && !senderIP.StartsWith(ClientSettings.ClientIP)){
+					string text = Encoding.UTF8.GetString(data);
+					string decrypted = CipherUtility.Decrypt<AesManaged>(text, ClientSettings.SecretKey, ClientSettings.Salt);
 
-				//make sure server sends secret key
-				string decrypted = CipherUtility.Decrypt<AesManaged>(text, secretKey, salt);
-				decrypted += anyIP.ToString();
-				Debug.Log ("receive " + decrypted);
-				if (decrypted.Contains(secretKey)){
-					decrypted = decrypted.Replace(secretKey, "");
-					addresses.Add (decrypted.Split(delimiterChars));
+					Hashtable hash = JsonReader.Deserialize<Hashtable>(decrypted);
+
+					//make sure response contains secret key
+					if (hash.ContainsKey("response")){
+						if (hash["response"].ToString() == ClientSettings.SecretKey){
+
+							ServerSettings address = new ServerSettings();
+							address.hostName = hash["host_name"].ToString();
+							address.portNumber = (int)hash["server_port"];
+							// need to find way to get ip address
+							// on server side, this is not secure
+							address.IP = anyIP.ToString().Split (':')[0];
+							addresses.Add (address);
+
+							ClientSettings.disableEncryption = Convert.ToBoolean(hash["disable_encrypt"].ToString());
+						}
+					}
 				}
-				
 			}
 			catch (Exception err)
 			{
 				print(err.ToString());
 			}
 		}
+
+
 	}
 
-	// cleanup
-	void OnDisable(){ 
-		if ( receiveThread!= null) 
-			receiveThread.Abort(); 
-		
-		client.Close(); 
-	} 
+	/// <summary>
+	/// method registered to PlayerActionInterpreter.cs
+	/// close menu if open and escape key pressed
+	/// </summary>
+	public void CloseMenu(){
+		if (settings.menuToggle.isOn){
+			PlayerActionInterpreter.menuIsOpen = true;
+			settings.menuToggle.isOn = false;
+		}
+	}
+
+	/* FUNCTIONS USED BY SETTINGS MENU */
+	public void SetBroadcastInvitation(bool value){
+		ClientSettings.BroadcastInvitation = value;
+	}
+	
+	public void SetBroadcastAddress(string addr){
+		ClientSettings.BroadcastAddress = addr;
+	}
+	
+	public void setSecretKey(string newKey){
+		ClientSettings.SecretKey = newKey;
+	}
+	
+	public void ResetSecretKey(){
+		ClientSettings.SecretKey = ClientSettings.DefaultKey;
+	}
+	
+	public void setPingRate(float value){
+		ClientSettings.BroadcastPingRate = value;
+		settings.pingValue.text = value.ToString() + "s";
+		if (ClientSettings.BroadcastPingRate != settings.pingSlider.value)
+			settings.pingSlider.value = ClientSettings.BroadcastPingRate;
+	}
+	
+	public void SetManualServers(){
+		LobbyServerButton[] buttons = ServerList.GetComponentsInChildren<LobbyServerButton>();
+		foreach(LobbyServerButton b in buttons){
+			if (b.config.wasManuallyAdded){
+				addresses.Remove (b.config);
+				servers.Remove(b.config);
+				Destroy(b.gameObject);
+				
+			}
+		}
+		AddManualServers();
+	}
 }

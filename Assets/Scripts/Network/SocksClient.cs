@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Collections;
 using JsonFx.Json;
+using System.Security.Cryptography;
 
 /// <summary>
 /// This class handles all of the actual
@@ -24,9 +25,8 @@ public class SocksClient {
 	public NetworkStream stream;
 
 	public bool ConnectResult(string sNetIP, int iPORT_NUM) {
-		if(isConnectedToServer())
+		if(isConnectedToServer(true))
 			return true;
-		
 		try 
 		{
 			client = new TcpClient(sNetIP, iPORT_NUM);
@@ -49,15 +49,23 @@ public class SocksClient {
 		try
 		{
 			client.Close();
+			client = null;
 		}
 		catch {}
 	}
 	
-	public bool isConnectedToServer() {
-		if(client == null)
+	public bool isConnectedToServer(bool verify = false) {
+
+
+		if(client == null){
 			return false;
-		else
-			return client.Connected;
+		}else{
+			if (verify){
+				return !((client.Client.Poll(1000, SelectMode.SelectRead) && (client.Client.Available == 0)) || !client.Client.Connected);
+			}else{
+				return client.Connected;
+			}
+		}
 	}
 
 	private void DoRead(IAsyncResult ar) { 
@@ -104,7 +112,14 @@ public class SocksClient {
 	// Use a StreamWriter to send a message to server.
 	public void SendData(string message) {
 		//StreamWriter writer = new StreamWriter(client.GetStream());
-		Byte[] data = System.Text.Encoding.UTF8.GetBytes(message);   
+		byte[] data;
+		if (ClientSettings.disableEncryption){
+			data = System.Text.Encoding.UTF8.GetBytes(message);
+		}else{
+			string encrypted = CipherUtility.Encrypt<AesManaged>(message, ClientSettings.SecretKey , ClientSettings.Salt);
+			data = Encoding.ASCII.GetBytes(encrypted); 
+		}
 		stream.Write (data, 0 , data.Length);
 	}
+
 }
