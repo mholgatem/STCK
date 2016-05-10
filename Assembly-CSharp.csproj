@@ -63,6 +63,7 @@
      <Compile Include="Assets\Scripts\Touch\support scripts\TouchCreator.cs" />
      <Compile Include="Assets\Scripts\Touch\support scripts\TouchExtension.cs" />
      <Compile Include="Assets\Scripts\Touch\support scripts\TouchInstance.cs" />
+     <Compile Include="Assets\Scripts\createSettingsList.cs" />
      <Compile Include="Assets\temp\Assets\Standard Assets\Effects\ImageEffects\Scripts\Antialiasing.cs" />
      <Compile Include="Assets\temp\Assets\Standard Assets\Effects\ImageEffects\Scripts\Bloom.cs" />
      <Compile Include="Assets\temp\Assets\Standard Assets\Effects\ImageEffects\Scripts\BloomAndFlares.cs" />
@@ -128,7 +129,6 @@
      <Compile Include="Assets\temp\Assets\scripts\XMLManager.cs" />
      <Compile Include="Assets\temp\Assets\scripts\animateBackground.cs" />
      <Compile Include="Assets\temp\Assets\scripts\backgroundTransition.cs" />
-     <Compile Include="Assets\temp\Assets\scripts\createSettingsList.cs" />
      <Compile Include="Assets\temp\Assets\scripts\modifyControls.cs" />
      <Compile Include="Assets\temp\Assets\scripts\propertyContainer.cs" />
      <Compile Include="Assets\temp\Assets\scripts\rotate_wheel.cs" />
@@ -208,17 +208,11 @@
      <None Include="Assets\temp\Assets\Standard Assets\Effects\ImageEffects\Shaders\_Antialiasing\FXAAPreset2.shader" />
      <None Include="Assets\temp\Assets\Standard Assets\Effects\ImageEffects\Shaders\_BloomAndFlares\BlurAndFlares.shader" />
      <None Include="Assets\temp\Assets\Standard Assets\Effects\ImageEffects\Shaders\_BloomAndFlares\BlendForBloom.shader" />
- <Reference Include="UnityEngine.Advertisements">
- <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Advertisements/UnityEngine.Advertisements.dll</HintPath>
- </Reference>
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>
  <Reference Include="UnityEngine.Networking">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Networking/UnityEngine.Networking.dll</HintPath>
- </Reference>
- <Reference Include="UnityEngine.Analytics">
- <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/UnityAnalytics/UnityEngine.Analytics.dll</HintPath>
  </Reference>
  <Reference Include="udpkit_wp8">
  <HintPath>C:/Users/Public/Documents/Unity Projects/STCK/Assets/temp/Assets/Plugins/udpkit_wp8.dll</HintPath>

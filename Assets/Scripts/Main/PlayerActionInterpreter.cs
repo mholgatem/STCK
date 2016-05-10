@@ -11,7 +11,7 @@ public class PlayerActionInterpreter : MonoBehaviour {
 	public static bool menuIsOpen = false;
 	public static bool editMode = true;
 
-	public Vector3 localScaleStart = Vector3.zero;
+	private Vector3 localScaleStart = Vector3.zero;
 
 	public delegate void UserAction();
 	public static event UserAction EscapePressed;

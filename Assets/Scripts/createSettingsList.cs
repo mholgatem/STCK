@@ -9,7 +9,6 @@ using System.IO;
 public class createSettingsList : MonoBehaviour {
 
 
-	public string path;
 	public GameObject sampleButton;
 	
 	public List<settingButton> buttonList;
@@ -24,8 +23,6 @@ public class createSettingsList : MonoBehaviour {
 	public static GameObject _keyboardLayout;
 	public Toggle menuToggle;
 
-	public bool use3DControls = true;
-	public bool useTestPath = false;
 	[HideInInspector] public ScreenOrientation currentScreen; //set by xmlmanager loadxml()
 	
 	private bool menuOpen = false;
@@ -41,7 +38,7 @@ public class createSettingsList : MonoBehaviour {
 
 	void Start () {
 
-		path = useTestPath ? "C:/Users/MrFancyPantsSR/Desktop" : Application.persistentDataPath;
+		path = Application.persistentDataPath;
 
 		mpRect = menuPanel.GetComponent<RectTransform>();
 		mpRect.anchoredPosition = new Vector2(0, -menuToggle.GetComponent<RectTransform>().rect.height);
@@ -56,20 +53,7 @@ public class createSettingsList : MonoBehaviour {
 	
 
 	void Update(){
-		if (Input.GetKeyDown(KeyCode.Escape))
-		{
-			if (menuToggle.isOn || savePanel.activeInHierarchy || controlEditor.transform.GetChild(0).gameObject.activeInHierarchy)
-			{
-				menuToggle.isOn = false;
-				savePanel.SetActive(false);
-				controlEditor.GetComponent<modifyControls>().hideMenu();
-				//keyboardInput.DeactivateInputField();
-			}
-			else
-			{
-				Application.LoadLevel(0);
-			}
-		}
+
 	}
 
 	public void PopulateList (bool openMenu) {
@@ -82,7 +66,7 @@ public class createSettingsList : MonoBehaviour {
 		{
 			GameObject.Destroy(child.gameObject);
 		}
-		var info = new DirectoryInfo(path);
+		var info = new DirectoryInfo(Application.persistentDataPath);
 		var fileInfo = info.GetFiles();
 		buttonList.Clear();
 		foreach (var file in fileInfo){

@@ -1,13 +1,14 @@
 ﻿<Properties>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Touch\TouchHandler.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\createSettingsList.cs">
     <Files>
-      <File FileName="Assets\Scripts\Main\PlayerActionInterpreter.cs" Line="64" Column="7" />
-      <File FileName="Assets\Scripts\Touch\support scripts\TouchExtension.cs" Line="155" Column="29" />
-      <File FileName="Assets\Scripts\Touch\TouchHandler.cs" Line="130" Column="6" />
-      <File FileName="Assets\Scripts\Touch\support scripts\TouchCreator.cs" Line="38" Column="4" />
-      <File FileName="Assets\temp\Assets\scripts\MouseDrag.cs" Line="44" Column="38" />
-      <File FileName="Assets\Scripts\Touch\support scripts\TouchInstance.cs" Line="141" Column="3" />
+      <File FileName="Assets\Scripts\Main\PlayerActionInterpreter.cs" Line="16" Column="36" />
+      <File FileName="Assets\Scripts\Touch\support scripts\TouchExtension.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Touch\TouchHandler.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Touch\support scripts\TouchCreator.cs" Line="1" Column="1" />
+      <File FileName="Assets\temp\Assets\scripts\MouseDrag.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Touch\support scripts\TouchInstance.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\createSettingsList.cs" Line="60" Column="27" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>

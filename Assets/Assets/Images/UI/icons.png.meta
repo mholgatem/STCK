@@ -1,18 +1,21 @@
 fileFormatVersion: 2
 guid: 66b8342703a52ea4c8040bba071d3bdc
-timeCreated: 1445466626
+timeCreated: 1461184262
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: icons_0
-    21300002: icons_1
-    21300004: icons_2
-    21300006: icons_3
-    21300008: icons_4
-    21300010: icons_5
-    21300012: icons_6
-    21300014: icons_7
-    21300016: icons_8
+    21300000: Arcade Button
+    21300002: Joystick
+    21300004: Dpad
+    21300006: UI Button
+    21300008: Wheel
+    21300010: Tilt Control
+    21300012: Keyboard
+    21300014: Snap
+    21300016: Save
+    21300018: New Layout
+    21300020: Disconnect
+    21300022: Edit Layout
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -59,7 +62,7 @@ TextureImporter:
   buildTargetSettings: []
   spriteSheet:
     sprites:
-    - name: icons_0
+    - name: Arcade Button
       rect:
         serializedVersion: 2
         x: 0
@@ -67,9 +70,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_1
+    - name: Joystick
       rect:
         serializedVersion: 2
         x: 64
@@ -77,9 +80,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_2
+    - name: Dpad
       rect:
         serializedVersion: 2
         x: 128
@@ -87,9 +90,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_3
+    - name: UI Button
       rect:
         serializedVersion: 2
         x: 192
@@ -97,9 +100,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_4
+    - name: Wheel
       rect:
         serializedVersion: 2
         x: 0
@@ -107,9 +110,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_5
+    - name: Tilt Control
       rect:
         serializedVersion: 2
         x: 64
@@ -117,9 +120,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_6
+    - name: Keyboard
       rect:
         serializedVersion: 2
         x: 128
@@ -127,9 +130,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_7
+    - name: Snap
       rect:
         serializedVersion: 2
         x: 192
@@ -137,9 +140,9 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
-    - name: icons_8
+    - name: Save
       rect:
         serializedVersion: 2
         x: 0
@@ -147,7 +150,37 @@ TextureImporter:
         width: 64
         height: 64
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: New Layout
+      rect:
+        serializedVersion: 2
+        x: 64
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: Disconnect
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: .5, y: .5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: Edit Layout
+      rect:
+        serializedVersion: 2
+        x: 192
+        y: 64
+        width: 64
+        height: 64
+      alignment: 0
+      pivot: {x: .5, y: .5}
       border: {x: 0, y: 0, z: 0, w: 0}
   spritePackingTag: 
   userData: 
